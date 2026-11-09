@@ -52,12 +52,27 @@ nav button.on{background:var(--soft);color:var(--ink);font-weight:700}
 .mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .mnav b{font-size:17px}.mnav button{width:48px;padding:0}
 .ai{white-space:pre-wrap;margin-top:12px;background:var(--soft);border-radius:12px;padding:12px;font-size:15px}.ai:empty{display:none}
+textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;resize:vertical}
+textarea:focus{outline:3px solid var(--accent);outline-offset:1px}
+.fab{position:fixed;right:14px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:4;background:var(--accent);color:var(--on);font-weight:700;border-radius:999px;min-height:48px;padding:0 18px;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6;display:flex;align-items:flex-end;justify-content:center}
+.modal[hidden]{display:none}
+.sheet{background:var(--card);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+.stars{display:flex;gap:6px;justify-content:center;margin:8px 0}
+.stars button{background:none;font-size:40px;line-height:1;min-height:52px;width:52px;padding:0;color:var(--line)}
+.stars button.on{color:var(--give)}
 </style>
 </head>
 <body>
 <main id="app"></main>
 <nav id="nav"></nav>
 <div id="toast" class="toast" hidden></div>
+<button id="fbbtn" class="fab" aria-label="Give feedback" onclick="fbOpen()">★ Feedback</button>
+<div id="fbm" class="modal" hidden onclick="if(event.target===this)fbClose()"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbt">
+<h2 id="fbt">Rate Cedi Plan</h2><div class="stars" id="stars"></div>
+<label for="fbtext">Your feedback</label><textarea id="fbtext" rows="4" placeholder="What do you like? What should be better?"></textarea>
+<button class="primary" onclick="fbSend()">Send feedback</button><button class="ghost primary" onclick="fbClose()">Close</button></div></div>
+<form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" hidden><input name="form-name" value="feedback"><input name="bot-field"><input name="rating"><textarea name="message"></textarea></form>
 <script>
 const KEY='cedi-plan-v1';
 const B=[{k:'needs',n:'Needs',p:.5,c:'var(--needs)'},{k:'wants',n:'Wants',p:.3,c:'var(--wants)'},{k:'save',n:'Savings',p:.15,c:'var(--save)'},{k:'give',n:'Giving',p:.05,c:'var(--give)'}];
@@ -121,8 +136,8 @@ function delTx(id){S.tx=S.tx.filter(x=>x.id!==id);persist();render()}
 function income(){
   const list=[...S.income].sort((a,b)=>b.date.localeCompare(a.date));
   return `<h1>Income</h1><div class="card"><h2>Add income</h2>
-  <label for="ia">Amount</label><input id="ia" class="amt" inputmode="decimal" value="1500" oninput="prev()">
-  <label for="in">What is it?</label><input id="in" value="National Service allowance">
+  <label for="ia">Amount</label><input id="ia" class="amt" inputmode="decimal" placeholder="0.00" oninput="prev()">
+  <label for="in">What is it?</label><input id="in" placeholder="e.g. Allowance, side job, gift">
   <label for="id">Date</label><input id="id" type="date" value="${today()}">
   <div class="split" id="prev"></div>
   <button class="primary" onclick="addInc()">Add income</button></div>
@@ -134,8 +149,8 @@ function delInc(id){S.income=S.income.filter(x=>x.id!==id);persist();render()}
 function goal(){
   const g=S.goal;
   if(!g||editGoal)return `<h1>Savings goal</h1><div class="card"><h2>${g?'Change goal':'Set a goal'}</h2>
-  <label for="gt">Amount to save (GH₵)</label><input id="gt" class="amt" inputmode="decimal" value="${g?g.target:1000}">
-  <label for="gd">Days to get there</label><input id="gd" inputmode="numeric" value="${g?g.days:80}">
+  <label for="gt">Amount to save (GH₵)</label><input id="gt" class="amt" inputmode="decimal" value="${g?g.target:''}" placeholder="e.g. 1000">
+  <label for="gd">Days to get there</label><input id="gd" inputmode="numeric" value="${g?g.days:''}" placeholder="e.g. 80">
   <button class="primary" onclick="setGoal()">${g?'Save changes':'Start goal'}</button>
   ${g?'<button class="ghost primary" onclick="editGoal=false;render()">Cancel</button>':''}</div>`;
   const saved=sum(S.tx.filter(x=>x.k==='save'&&x.date>=g.start));
@@ -205,6 +220,20 @@ function render(){
   $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="tab='${t[0]}';render();scrollTo(0,0)">${t[1]}</button>`).join('');
   if(tab==='income')prev();
 }
+let fbR=0;
+const fbPost=(r,m)=>fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({'form-name':'feedback',rating:r||'',message:m}).toString()});
+function fbStars(){$('#stars').innerHTML=[1,2,3,4,5].map(n=>`<button aria-label="${n} star${n>1?'s':''}" class="${n<=fbR?'on':''}" onclick="fbR=${n};fbStars()">★</button>`).join('')}
+function fbOpen(){fbStars();$('#fbm').hidden=false}
+function fbClose(){$('#fbm').hidden=true}
+async function fbSend(){const msg=$('#fbtext').value.trim();
+  if(!fbR&&!msg){toast('Pick a rating or write a note');return}
+  let sent=false;try{sent=(await fbPost(fbR,msg)).ok}catch(e){}
+  if(!sent){try{const l=JSON.parse(localStorage.getItem('cedi-fb')||'[]');l.push({rating:fbR,message:msg});localStorage.setItem('cedi-fb',JSON.stringify(l))}catch(e){}}
+  $('#fbtext').value='';fbR=0;fbClose();toast(sent?'Thank you for your feedback!':'Thanks! Saved, will send when online')}
+async function fbFlush(){try{const l=JSON.parse(localStorage.getItem('cedi-fb')||'[]');if(!l.length)return;const rest=[];
+  for(const f of l){try{if(!(await fbPost(f.rating,f.message)).ok)rest.push(f)}catch(e){rest.push(f)}}
+  localStorage.setItem('cedi-fb',JSON.stringify(rest))}catch(e){}}
+addEventListener('online',fbFlush);fbFlush();
 render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
