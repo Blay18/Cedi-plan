@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cedi Plan</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B6E4F">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#F5F8F4;--card:#FFFFFF;--ink:#0F2419;--mute:#5A6B61;--line:#DCE6DE;--accent:#0B6E4F;--on:#fff;--needs:#2F6DB5;--wants:#E0701A;--save:#0B6E4F;--give:#A67C00;--bad:#B3261E;--soft:#E7F0E9;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C1511;--card:#15211A;--ink:#E7F0E9;--mute:#9AAEA1;--line:#27382E;--accent:#3DDC97;--on:#08130D;--needs:#7DB2F0;--wants:#FF9D5C;--save:#3DDC97;--give:#F2C14E;--bad:#FF8A80;--soft:#1D2C23;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C1511;--card:#15211A;--ink:#E7F0E9;--mute:#9AAEA1;--line:#27382E;--accent:#3DDC97;--on:#08130D;--needs:#7DB2F0;--wants:#FF9D5C;--save:#3DDC97;--give:#F2C14E;--bad:#FF8A80;--soft:#1D2C23;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:520px;margin:0 auto;padding:18px 16px 96px}
+h1{font-size:15px;margin:0 0 14px;color:var(--mute);font-weight:600}
+h2{font-size:17px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.big{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin:2px 0 4px}
+.mute{color:var(--mute);font-size:14px}
+.bad{color:var(--bad)}.ok{color:var(--accent)}
+label{display:block;font-size:13px;color:var(--mute);margin:10px 0 4px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;min-height:48px}
+input:focus,button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.amt{font-size:26px;font-weight:700}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;min-height:48px;padding:0 16px}
+.primary{background:var(--accent);color:var(--on);font-weight:700;width:100%;margin-top:14px}
+.ghost{background:var(--soft);color:var(--ink)}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.chip{background:var(--bg);border:1.5px solid var(--line);color:var(--ink);padding:0 2px;font-size:13px}
+.chip.on{color:var(--on);border-color:transparent}
+.bucket{margin:12px 0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.bar{height:10px;background:var(--soft);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:6px}
+.tx{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.tx:first-of-type{border-top:0}
+.tx .d{flex:1;min-width:0}.tx .d b{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{background:none;color:var(--mute);min-height:40px;width:40px;padding:0;font-size:20px}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.split div{background:var(--soft);border-radius:12px;padding:10px 12px}
+.split b{display:block;font-size:18px}
+.stack{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--soft);margin:10px 0}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));gap:4px;justify-content:center}
+nav button{flex:1;max-width:120px;background:none;color:var(--mute);font-size:13px;padding:0 2px;min-height:46px}
+nav button.on{background:var(--soft);color:var(--ink);font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;z-index:5}
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mnav b{font-size:17px}.mnav button{width:48px;padding:0}
+.ai{white-space:pre-wrap;margin-top:12px;background:var(--soft);border-radius:12px;padding:12px;font-size:15px}.ai:empty{display:none}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div id="toast" class="toast" hidden></div>
+<script>
+const KEY='cedi-plan-v1';
+const B=[{k:'needs',n:'Needs',p:.5,c:'var(--needs)'},{k:'wants',n:'Wants',p:.3,c:'var(--wants)'},{k:'save',n:'Savings',p:.15,c:'var(--save)'},{k:'give',n:'Giving',p:.05,c:'var(--give)'}];
+const CH=[{k:'auto',n:'Auto',c:'var(--accent)'},...B];
+let S={income:[],tx:[],goal:null,debts:[]},tab='home',cat='auto',dtype='owe',rm=null,editGoal=false,SAMPLE=null;
+const API=async(p,q)=>{const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,quick:!!q})});if(!r.ok)throw{code:r.status===429?'rate_limited':'error'};return(await r.json()).text};
+SAMPLE=async(p,o={})=>{const t=await API(p,0);if(o.onText)o.onText({text:t});return{text:t}};
+SAMPLE.json=async p=>JSON.parse((await API(p,1)).replace(/```json|```/g,'').trim());
+function kw(t){t=(t||'').toLowerCase();const h=l=>l.some(w=>t.includes(w));
+  if(h(['church','tithe','offering','donat','charity']))return'giving';
+  if(h(['save','susu','savings']))return'save';
+  if(h(['movie','party','club','drink','beer','game','netflix','pizza','cloth','shoe','hair','outing','gift','snack','fries','chicken']))return'wants';
+  return'needs'}
+async function aiCat(note,amt){
+  if(!SAMPLE||!note)return kw(note);
+  try{const r=await SAMPLE.json('Classify one expense for a Ghanaian National Service person using a 50/30/15/5 budget. Categories: needs (transport, food, rent, utilities, data, health, school, toiletries, debt payments), wants (entertainment, eating out, clothes, hair, treats, outings), giving (church, tithes, donations, gifts to family), save (money put aside). Expense: '+JSON.stringify(note)+', GHS '+amt+'. Reply with ONLY JSON like {"category":"needs"}',{modelTier:'quick'});
+    if(r&&B.some(b=>b.k===r.category))return r.category}catch(e){}
+  return kw(note)}
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const z=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());
+const today=()=>iso(new Date());
+const dd=s=>new Date(s+'T00:00:00');
+const dayDiff=(a,b)=>Math.round((dd(b)-dd(a))/864e5);
+const money=n=>'GH₵'+(+n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2});
+const mname=m=>dd(m+'-01').toLocaleDateString('en',{month:'long',year:'numeric'});
+const fdate=s=>dd(s).toLocaleDateString('en',{day:'numeric',month:'short'});
+const sum=a=>a.reduce((t,x)=>t+x.amt,0);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const pct=(a,b)=>b>0?Math.min(100,a/b*100):0;
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,1800)}
+function sm(m){const inc=sum(S.income.filter(i=>i.date.startsWith(m)));const t=S.tx.filter(x=>x.date.startsWith(m));
+  return{inc,b:B.map(b=>({...b,alloc:inc*b.p,used:sum(t.filter(x=>x.k===b.k))}))}}
+function bar(a,b,c){return `<div class="bar"><i style="width:${pct(a,b)}%;background:${a>b&&b>0?'var(--bad)':c}"></i></div>`}
+function txRows(list){return list.map(x=>{const b=B.find(q=>q.k===x.k);return `<div class="tx"><span class="dot" style="background:${b.c}"></span><div class="d"><b>${esc(x.note||(x.k==='save'?'Saved':b.n))}</b><span class="mute">${b.n}, ${fdate(x.date)}</span></div><b class="${x.k==='save'?'ok':''}">${x.k==='save'?'+':'−'}${money(x.amt)}</b><button class="x" aria-label="Delete" onclick="delTx('${x.id}')">×</button></div>`}).join('')}
+function home(){
+  const m=today().slice(0,7),s=sm(m);
+  const left=s.b.filter(b=>b.k!=='save').reduce((t,b)=>t+b.alloc-b.used,0);
+  const recent=[...S.tx].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,8);
+  return `<h1>${mname(m)}</h1>
+  <div class="card"><div class="mute">Left to spend this month</div>
+  <div class="big ${left<0?'bad':''}">${money(left)}</div>
+  <div class="mute">${s.inc?`From ${money(s.inc)} income (85% is for spending, 15% for saving)`:'Add your income to see your budget.'}</div></div>
+  <div class="card"><h2>Add expense</h2>
+  <input id="amt" class="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount in cedis">
+  <label>Category (Auto lets AI choose from your note)</label>
+  <div class="chips">${CH.map(b=>`<button class="chip ${b.k===cat?'on':''}" data-k="${b.k}" style="${b.k===cat?'background:'+b.c:''}" onclick="pick('${b.k}')">${b.k==='save'?'Saved':b.n}</button>`).join('')}</div>
+  <label for="note">Note (optional)</label><input id="note" placeholder="e.g. Trotro, lunch, airtime">
+  <button class="primary" onclick="addTx()">Add</button></div>
+  <div class="card"><h2>Your split</h2>${s.b.map(b=>`<div class="bucket"><div class="row"><b>${b.n} ${b.p*100}%</b><span class="mute">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}</div>`).join('')}</div>
+  <div class="card"><h2>Recent</h2>${recent.length?txRows(recent):'<div class="mute">Nothing yet. Add your first expense above.</div>'}</div>`}
+function pick(k){cat=k;document.querySelectorAll('.chip').forEach(c=>{const on=c.dataset.k===k;c.classList.toggle('on',on);c.style.background=on?CH.find(b=>b.k===k).c:''})}
+async function addTx(){const a=parseFloat($('#amt').value);if(!(a>0)){toast('Enter an amount first');$('#amt').focus();return}
+  const note=$('#note').value.trim();let k=cat;
+  if(k==='auto'){toast('Choosing a category...');k=await aiCat(note,a)}
+  S.tx.push({id:uid(),date:today(),amt:a,k,note});persist();render();toast('Added to '+B.find(b=>b.k===k).n)}
+function delTx(id){S.tx=S.tx.filter(x=>x.id!==id);persist();render()}
+function income(){
+  const list=[...S.income].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<h1>Income</h1><div class="card"><h2>Add income</h2>
+  <label for="ia">Amount</label><input id="ia" class="amt" inputmode="decimal" value="1500" oninput="prev()">
+  <label for="in">What is it?</label><input id="in" value="National Service allowance">
+  <label for="id">Date</label><input id="id" type="date" value="${today()}">
+  <div class="split" id="prev"></div>
+  <button class="primary" onclick="addInc()">Add income</button></div>
+  <div class="card"><h2>History</h2>${list.length?list.map(i=>`<div class="tx"><div class="d"><b>${esc(i.note||'Income')}</b><span class="mute">${fdate(i.date)}</span></div><b class="ok">+${money(i.amt)}</b><button class="x" aria-label="Delete" onclick="delInc('${i.id}')">×</button></div>`).join(''):'<div class="mute">No income added yet.</div>'}</div>`}
+function prev(){const a=parseFloat($('#ia').value)||0;$('#prev').innerHTML=B.map(b=>`<div><span class="mute">${b.n} ${b.p*100}%</span><b style="color:${b.c}">${money(a*b.p)}</b></div>`).join('')}
+function addInc(){const a=parseFloat($('#ia').value);if(!(a>0)){toast('Enter an amount first');return}
+  S.income.push({id:uid(),date:$('#id').value||today(),amt:a,note:$('#in').value.trim()});persist();render();toast('Income added and split')}
+function delInc(id){S.income=S.income.filter(x=>x.id!==id);persist();render()}
+function goal(){
+  const g=S.goal;
+  if(!g||editGoal)return `<h1>Savings goal</h1><div class="card"><h2>${g?'Change goal':'Set a goal'}</h2>
+  <label for="gt">Amount to save (GH₵)</label><input id="gt" class="amt" inputmode="decimal" value="${g?g.target:1000}">
+  <label for="gd">Days to get there</label><input id="gd" inputmode="numeric" value="${g?g.days:80}">
+  <button class="primary" onclick="setGoal()">${g?'Save changes':'Start goal'}</button>
+  ${g?'<button class="ghost primary" onclick="editGoal=false;render()">Cancel</button>':''}</div>`;
+  const saved=sum(S.tx.filter(x=>x.k==='save'&&x.date>=g.start));
+  const el=Math.max(0,dayDiff(g.start,today())),left=Math.max(0,g.days-el),need=Math.max(0,g.target-saved);
+  const exp=g.target*Math.min(1,el/g.days),diff=saved-exp,done=saved>=g.target;
+  const end=new Date(dd(g.start).getTime()+g.days*864e5);
+  const status=done?'<b class="ok">Goal reached. Well done!</b>':diff>=0?`<b class="ok">On track, ${money(diff)} ahead of plan</b>`:`<b class="bad">${money(-diff)} behind plan</b>`;
+  return `<h1>Savings goal</h1><div class="card"><div class="mute">Saved so far</div>
+  <div class="big">${money(saved)}</div><div class="mute">of ${money(g.target)} in ${g.days} days</div>
+  <div class="bar" style="height:16px;margin:14px 0 8px"><i style="width:${pct(saved,g.target)}%;background:var(--save)"></i></div>
+  <div class="row"><span>${Math.floor(pct(saved,g.target))}% done</span>${status}</div></div>
+  <div class="card"><div class="split" style="margin-top:0"><div><span class="mute">Days left</span><b>${left}</b></div><div><span class="mute">Still to save</span><b>${money(need)}</b></div>
+  <div><span class="mute">Needed per day</span><b>${left?money(need/left):money(need)}</b></div><div><span class="mute">Target date</span><b>${end.toLocaleDateString('en',{day:'numeric',month:'short',year:'numeric'})}</b></div></div></div>
+  <div class="card"><h2>Put money aside</h2><input id="ga" class="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount to save">
+  <button class="primary" onclick="addSave()">Add to savings</button>
+  <button class="ghost primary" onclick="editGoal=true;render()">Change goal</button></div>`}
+function setGoal(){const t=parseFloat($('#gt').value),d=parseInt($('#gd').value);if(!(t>0)||!(d>0)){toast('Enter an amount and number of days');return}
+  S.goal={target:t,days:d,start:S.goal?S.goal.start:today()};editGoal=false;persist();render();toast('Goal saved')}
+function addSave(){const a=parseFloat($('#ga').value);if(!(a>0)){toast('Enter an amount first');return}
+  S.tx.push({id:uid(),date:today(),amt:a,k:'save',note:'Savings goal'});persist();render();toast('Saved. Keep going!')}
+const rem=d=>Math.max(0,d.total-sum(d.pays));
+function debt(){
+  const owe=S.debts.filter(d=>d.type==='owe'),owed=S.debts.filter(d=>d.type==='owed'),tot=l=>l.reduce((t,d)=>t+rem(d),0);
+  return `<h1>Debts</h1><div class="card"><div class="mute">You owe</div><div class="big ${tot(owe)?'bad':'ok'}">${money(tot(owe))}</div><div class="mute">${money(tot(owed))} is owed to you</div></div>
+  <div class="card"><h2>Add a debt</h2><div class="chips" style="grid-template-columns:1fr 1fr"><button class="chip ${dtype==='owe'?'on':''}" style="${dtype==='owe'?'background:var(--bad)':''}" onclick="dtype='owe';render()">I owe</button><button class="chip ${dtype==='owed'?'on':''}" style="${dtype==='owed'?'background:var(--accent)':''}" onclick="dtype='owed';render()">Owed to me</button></div>
+  <label for="dw">${dtype==='owe'?'Who do you owe?':'Who owes you?'}</label><input id="dw" placeholder="e.g. Kofi, Susu group">
+  <label for="da">Amount (GH₵)</label><input id="da" class="amt" inputmode="decimal" placeholder="0.00">
+  <label for="dl">Due date (optional)</label><input id="dl" type="date">
+  <button class="primary" onclick="addDebt()">Add debt</button></div>
+  ${S.debts.map(d=>{const r=rem(d),late=d.due&&r>0&&d.due<today();return `<div class="card"><div class="row"><b>${esc(d.who)}</b><button class="x" aria-label="Delete debt" onclick="delDebt('${d.id}')">×</button></div>
+  <div class="row"><span class="mute">${d.type==='owe'?'You owe':'Owes you'} ${money(r)} of ${money(d.total)}</span>${d.due?`<span class="${late?'bad':'mute'}">${late?'Overdue, ':'Due '}${fdate(d.due)}</span>`:''}</div>${bar(sum(d.pays),d.total,'var(--accent)')}
+  ${r>0?`<div style="display:flex;gap:8px;margin-top:10px"><input id="p_${d.id}" inputmode="decimal" placeholder="Amount ${d.type==='owe'?'paid':'received'}"><button class="ghost" style="flex:none" onclick="payDebt('${d.id}')">${d.type==='owe'?'Pay':'Received'}</button></div>`:'<div class="ok" style="margin-top:8px"><b>Cleared</b></div>'}</div>`}).join('')}`}
+function addDebt(){const w=$('#dw').value.trim(),a=parseFloat($('#da').value);if(!w||!(a>0)){toast('Enter a name and an amount');return}
+  S.debts.push({id:uid(),type:dtype,who:w,total:a,due:$('#dl').value,pays:[]});persist();render();toast('Debt added')}
+function payDebt(id){const d=S.debts.find(x=>x.id===id);if(!d)return;let a=parseFloat($('#p_'+id).value);if(!(a>0)){toast('Enter an amount first');return}
+  a=Math.min(a,rem(d));d.pays.push({date:today(),amt:a});
+  if(d.type==='owe')S.tx.push({id:uid(),date:today(),amt:a,k:'needs',note:'Debt: '+d.who});else S.income.push({id:uid(),date:today(),amt:a,note:'Repaid by '+d.who});
+  persist();render();toast(d.type==='owe'?'Payment saved and counted under Needs':'Saved and added to income')}
+function delDebt(id){S.debts=S.debts.filter(x=>x.id!==id);persist();render()}
+async function analyze(){
+  if(!SAMPLE){toast('AI is not available here');return}
+  const m=rm||today().slice(0,7),s=sm(m),out=$('#ai');
+  const ex=S.tx.filter(x=>x.date.startsWith(m)).slice(-60).map(x=>x.k+': '+(x.note||'no note')+' GHS '+x.amt).join('\n');
+  const dt=S.debts.map(d=>(d.type==='owe'?'I owe ':'Owed to me by ')+d.who+': '+rem(d)+' left'+(d.due?', due '+d.due:'')).join('\n');
+  const p='You are a friendly money coach for a Ghanaian National Service person on a 50% needs, 30% wants, 15% savings, 5% giving budget. Month: '+mname(m)+'. Income: GHS '+s.inc+'.\nBuckets (planned / used):\n'+s.b.map(b=>b.n+': '+b.alloc.toFixed(2)+' / '+b.used.toFixed(2)).join('\n')+'\nExpenses:\n'+(ex||'none')+'\nDebts:\n'+(dt||'none')+'\nGive a short review in plain text, no markdown, under 130 words: what went well, the biggest leak (and any entry that looks filed in the wrong category), one concrete step for next week, and a note on debts if any. Use cedis.';
+  out.textContent='Thinking...';
+  try{await SAMPLE(p,{modelTier:'default',cache:false,onText:({text})=>{out.textContent=text}})}catch(e){out.textContent=e&&e.code==='not_granted'?'Allow AI access to use this feature.':'Couldn’t analyze right now. Try again in a moment.'}}
+function report(){
+  const m=rm||today().slice(0,7),s=sm(m);
+  const spent=s.b.filter(b=>b.k!=='save').reduce((t,b)=>t+b.used,0),saved=s.b.find(b=>b.k==='save').used;
+  const unused=Math.max(0,s.inc-spent-saved),rate=s.inc?Math.round(saved/s.inc*100):0;
+  const w=v=>s.inc?v/Math.max(s.inc,spent+saved)*100:0;
+  return `<h1>Monthly report</h1><div class="mnav"><button class="ghost" aria-label="Previous month" onclick="mv(-1)">‹</button><b>${mname(m)}</b><button class="ghost" aria-label="Next month" onclick="mv(1)">›</button></div>
+  <div class="card"><div class="row"><span class="mute">Income</span><b>${money(s.inc)}</b></div>
+  <div class="stack"><i style="width:${w(spent)}%;background:var(--wants)"></i><i style="width:${w(saved)}%;background:var(--save)"></i></div>
+  <div class="row"><span><span class="dot" style="display:inline-block;background:var(--wants)"></span> Spent</span><b>${money(spent)}</b></div>
+  <div class="row"><span><span class="dot" style="display:inline-block;background:var(--save)"></span> Saved</span><b>${money(saved)}</b></div>
+  <div class="row"><span class="mute">Not used yet</span><b>${money(unused)}</b></div>
+  <p class="mute" style="margin:12px 0 0">${s.inc?`You saved ${rate}% of your income. The plan is 15%.`:'No income recorded for this month.'}</p></div>
+  <div class="card"><h2>Plan vs actual</h2>${s.b.map(b=>`<div class="bucket"><div class="row"><b>${b.n}</b><span class="${b.k!=='save'&&b.used>b.alloc?'bad':'mute'}">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}</div>`).join('')}</div>
+  <div class="card"><div class="row"><span class="mute">Debt payments this month</span><b>${money(S.debts.filter(d=>d.type==='owe').reduce((t,d)=>t+sum(d.pays.filter(p=>p.date.startsWith(m))),0))}</b></div></div>
+  <div class="card"><h2>AI review</h2><div class="mute">Spots overspending and anything filed in the wrong category.</div><button class="primary" onclick="analyze()">Analyze this month</button><div id="ai" class="ai"></div></div>`}
+function mv(d){const m=rm||today().slice(0,7);const t=dd(m+'-01');t.setMonth(t.getMonth()+d);rm=iso(t).slice(0,7);render()}
+const TABS=[['home','Today',home],['income','Income',income],['goal','Goal',goal],['debt','Debts',debt],['report','Report',report]];
+function render(){
+  $('#app').innerHTML=TABS.find(t=>t[0]===tab)[2]();
+  $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="tab='${t[0]}';render();scrollTo(0,0)">${t[1]}</button>`).join('');
+  if(tab==='income')prev();
+}
+render();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
