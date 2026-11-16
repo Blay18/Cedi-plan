@@ -61,12 +61,40 @@ textarea:focus{outline:3px solid var(--accent);outline-offset:1px}
 .stars{display:flex;gap:6px;justify-content:center;margin:8px 0}
 .stars button{background:none;font-size:40px;line-height:1;min-height:52px;width:52px;padding:0;color:var(--line)}
 .stars button.on{color:var(--give)}
+
+:root{--bg:#F5F8F5;--card:#fff;--ink:#12251D;--mute:#5B6B62;--line:#DEE7E0;--accent:#087657;--on:#fff;--needs:#2F6DB5;--wants:#E87928;--exp:#E87928;--save:#087657;--give:#A67C00;--bad:#C0392B;--soft:#E6F0EA;--dark:#12372B}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C1511;--card:#15211A;--ink:#E7F0E9;--mute:#9AAEA1;--line:#27382E;--accent:#3DDC97;--on:#08130D;--needs:#7DB2F0;--wants:#F59A5C;--exp:#F59A5C;--save:#3DDC97;--give:#F2C14E;--bad:#E57368;--soft:#1D2C23;--dark:#0E2A20}}
+:root[data-theme="dark"]{--bg:#0C1511;--card:#15211A;--ink:#E7F0E9;--mute:#9AAEA1;--line:#27382E;--accent:#3DDC97;--on:#08130D;--needs:#7DB2F0;--wants:#F59A5C;--exp:#F59A5C;--save:#3DDC97;--give:#F2C14E;--bad:#E57368;--soft:#1D2C23;--dark:#0E2A20}
+.card{box-shadow:0 1px 2px rgba(18,55,43,.06),0 4px 14px rgba(18,55,43,.05)}
+main>*{animation:in .25s ease}@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+button{transition:transform .1s,background .2s}button:active{transform:scale(.97)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;min-height:54px;max-width:100px;border-radius:12px}
+nav button.on{color:var(--accent);font-weight:700}
+nav svg,.ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fab{bottom:calc(88px + env(safe-area-inset-bottom,0px));min-height:44px;padding:0 14px;font-size:14px}
+.toast{bottom:100px}
+.hero{background:linear-gradient(135deg,var(--dark),#087657);color:#fff;border:0}
+.hero .mute{color:rgba(255,255,255,.75)}
+.hs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.hs div{background:rgba(255,255,255,.12);border-radius:12px;padding:8px 10px;font-size:12px}.hs b{display:block;font-size:14px}
+.qa{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.qa button{background:var(--card);border:1px solid var(--line);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;min-height:76px;font-size:13px;font-weight:600}
+.ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:var(--soft);color:var(--accent)}
+.ic.e{background:rgba(232,121,40,.16);color:var(--exp)}
+.chart{width:100%;height:auto;display:block}
+.lnk{background:none;color:var(--accent);min-height:32px;padding:0;font-weight:600;font-size:14px}
+.ins{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:14px}.ins:first-of-type{border:0}
+.ins i{width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:var(--accent)}.ins.warn i{background:var(--exp)}.ins.bad i{background:var(--bad)}
+.back{padding:0 14px;min-height:40px;margin-bottom:10px}
+.link{width:100%;text-align:left;margin-top:8px}
 </style>
 </head>
 <body>
 <main id="app"></main>
 <nav id="nav"></nav>
 <div id="toast" class="toast" hidden></div>
+<div id="am" class="modal" hidden onclick="if(event.target===this)closeM()"><div class="sheet" id="ams"></div></div>
 <button id="fbbtn" class="fab" aria-label="Give feedback" onclick="fbOpen()">★ Feedback</button>
 <div id="fbm" class="modal" hidden onclick="if(event.target===this)fbClose()"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fbt">
 <h2 id="fbt">Rate Cedi Plan</h2><div class="stars" id="stars"></div>
@@ -88,7 +116,7 @@ function kw(t){t=(t||'').toLowerCase();const h=l=>l.some(w=>t.includes(w));
   return'needs'}
 async function aiCat(note,amt){
   if(!SAMPLE||!note)return kw(note);
-  try{const r=await SAMPLE.json('Classify one expense for a Ghanaian National Service person using a 50/30/15/5 budget. Categories: needs (transport, food, rent, utilities, data, health, school, toiletries, debt payments), wants (entertainment, eating out, clothes, hair, treats, outings), giving (church, tithes, donations, gifts to family), save (money put aside). Expense: '+JSON.stringify(note)+', GHS '+amt+'. Reply with ONLY JSON like {"category":"needs"}',{modelTier:'quick'});
+  try{const r=await SAMPLE.json('Classify one expense for a person living in Ghana using a 50/30/15/5 budget. Categories: needs (transport, food, rent, utilities, data, health, school, toiletries, debt payments), wants (entertainment, eating out, clothes, hair, treats, outings), giving (church, tithes, donations, gifts to family), save (money put aside). Expense: '+JSON.stringify(note)+', GHS '+amt+'. Reply with ONLY JSON like {"category":"needs"}',{modelTier:'quick'});
     if(r&&B.some(b=>b.k===r.category))return r.category}catch(e){}
   return kw(note)}
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
@@ -111,41 +139,70 @@ function sm(m){const inc=sum(S.income.filter(i=>i.date.startsWith(m)));const t=S
   return{inc,b:B.map(b=>({...b,alloc:inc*b.p,used:sum(t.filter(x=>x.k===b.k))}))}}
 function bar(a,b,c){return `<div class="bar"><i style="width:${pct(a,b)}%;background:${a>b&&b>0?'var(--bad)':c}"></i></div>`}
 function txRows(list){return list.map(x=>{const b=B.find(q=>q.k===x.k);return `<div class="tx"><span class="dot" style="background:${b.c}"></span><div class="d"><b>${esc(x.note||(x.k==='save'?'Saved':b.n))}</b><span class="mute">${b.n}, ${fdate(x.date)}</span></div><b class="${x.k==='save'?'ok':''}">${x.k==='save'?'+':'−'}${money(x.amt)}</b><button class="x" aria-label="Delete" onclick="delTx('${x.id}')">×</button></div>`}).join('')}
+const IC={home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',act:'<path d="M4 6h16M4 12h16M4 18h10"/>',budget:'<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>',goals:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/>',me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',inc:'<path d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/>',exp:'<path d="M12 20V8m0 0l-4 4m4-4l4 4M5 4h14"/>',sav:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'};
+const svg=p=>`<svg viewBox="0 0 24 24" aria-hidden="true">${p}</svg>`;
+const mkey=()=>today().slice(0,7);
+const prevM=m=>{const t=dd(m+'-01');t.setMonth(t.getMonth()-1);return iso(t).slice(0,7)};
+const spendOf=m=>sum(S.tx.filter(x=>x.date.startsWith(m)&&x.k!=='save'));
+const all=()=>[...S.income.map(i=>({...i,t:'inc'})),...S.tx.map(x=>({...x,t:x.k}))].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+function row(x){const inc=x.t==='inc',b=inc?null:B.find(q=>q.k===x.t);
+  return `<div class="tx"><span class="dot" style="background:${inc?'var(--accent)':b.c}"></span><div class="d"><b>${esc(x.note||(inc?'Income':b.n))}</b><span class="mute">${inc?'Income':b.n}, ${fdate(x.date)}</span></div><b class="${inc||x.t==='save'?'ok':''}">${inc||x.t==='save'?'+':'−'}${money(x.amt)}</b><button class="x" aria-label="Delete" onclick="${inc?'delInc':'delTx'}('${x.id}')">×</button></div>`}
 function home(){
-  const m=today().slice(0,7),s=sm(m);
-  const left=s.b.filter(b=>b.k!=='save').reduce((t,b)=>t+b.alloc-b.used,0);
-  const recent=[...S.tx].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,8);
+  const m=mkey(),s=sm(m),inc=s.inc,spent=spendOf(m),saved=sum(S.tx.filter(x=>x.k==='save')),avail=sum(S.income)-sum(S.tx);
+  const alloc=s.b.filter(b=>b.k!=='save').reduce((t,b)=>t+b.alloc,0);
+  const dim=new Date(+m.slice(0,4),+m.slice(5),0).getDate(),day=Array(dim).fill(0);
+  S.tx.filter(x=>x.date.startsWith(m)&&x.k!=='save').forEach(x=>day[+x.date.slice(8)-1]+=x.amt);
+  const mx=Math.max(...day,1),td=+today().slice(8);
+  const bars=day.map((v,i)=>v?`<rect x="${i*10+1}" y="${80-v/mx*76}" width="8" height="${Math.max(v/mx*76,2)}" rx="2" fill="${i+1===td?'var(--accent)':'var(--exp)'}"/>`:'').join('');
+  const ins=[];
+  s.b.filter(b=>b.k!=='save'&&b.alloc>0).forEach(b=>{const p=b.used/b.alloc*100;if(p>=100)ins.push(['bad',`${b.n} is over budget by ${money(b.used-b.alloc)}.`]);else if(p>=80)ins.push(['warn',`${b.n} is at ${Math.round(p)}% of its budget.`])});
+  const ps=spendOf(prevM(m));if(ps>0&&spent>0){const c=Math.round((spent-ps)/ps*100);ins.push([c>0?'warn':'ok',`Spending is ${Math.abs(c)}% ${c>0?'higher':'lower'} than last month (${money(ps)}).`])}
+  if(inc>0)ins.push(['ok',`You’ve saved ${Math.round(sum(S.tx.filter(x=>x.k==='save'&&x.date.startsWith(m)))/inc*100)}% of this month’s income. The plan is 15%.`]);else ins.push(['warn','Add your income to see your budget and insights.']);
+  const up=S.debts.filter(d=>rem(d)>0).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:1).slice(0,3);
+  const g=S.goal,gs=g?sum(S.tx.filter(x=>x.k==='save'&&x.date>=g.start)):0;
   return `<h1>${mname(m)}</h1>
-  <div class="card"><div class="mute">Left to spend this month</div>
-  <div class="big ${left<0?'bad':''}">${money(left)}</div>
-  <div class="mute">${s.inc?`From ${money(s.inc)} income (85% is for spending, 15% for saving)`:'Add your income to see your budget.'}</div></div>
-  <div class="card"><h2>Add expense</h2>
-  <input id="amt" class="amt" inputmode="decimal" placeholder="0.00" aria-label="Amount in cedis">
-  <label>Category (Auto lets AI choose from your note)</label>
-  <div class="chips">${CH.map(b=>`<button class="chip ${b.k===cat?'on':''}" data-k="${b.k}" style="${b.k===cat?'background:'+b.c:''}" onclick="pick('${b.k}')">${b.k==='save'?'Saved':b.n}</button>`).join('')}</div>
-  <label for="note">Note (optional)</label><input id="note" placeholder="e.g. Trotro, lunch, airtime">
-  <button class="primary" onclick="addTx()">Add</button></div>
-  <div class="card"><h2>Your split</h2>${s.b.map(b=>`<div class="bucket"><div class="row"><b>${b.n} ${b.p*100}%</b><span class="mute">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}</div>`).join('')}</div>
-  <div class="card"><h2>Recent</h2>${recent.length?txRows(recent):'<div class="mute">Nothing yet. Add your first expense above.</div>'}</div>`}
-function pick(k){cat=k;document.querySelectorAll('.chip').forEach(c=>{const on=c.dataset.k===k;c.classList.toggle('on',on);c.style.background=on?CH.find(b=>b.k===k).c:''})}
-async function addTx(){const a=parseFloat($('#amt').value);if(!(a>0)){toast('Enter an amount first');$('#amt').focus();return}
-  const note=$('#note').value.trim();let k=cat;
-  if(k==='auto'){toast('Choosing a category...');k=await aiCat(note,a)}
-  S.tx.push({id:uid(),date:today(),amt:a,k,note});persist();render();toast('Added to '+B.find(b=>b.k===k).n)}
+  <div class="card hero"><div class="mute">Available to spend</div><div class="big ${avail<0?'bad':''}">${money(avail)}</div>
+  <div class="hs"><div>Income<b>${money(inc)}</b></div><div>Expenses<b>${money(spent)}</b></div><div>Total saved<b>${money(saved)}</b></div></div></div>
+  <div class="qa"><button onclick="openAdd('income')"><span class="ic">${svg(IC.inc)}</span>Add income</button><button onclick="openAdd('expense')"><span class="ic e">${svg(IC.exp)}</span>Add expense</button><button onclick="openAdd('save')"><span class="ic">${svg(IC.sav)}</span>Add savings</button></div>
+  <div class="card"><div class="row"><h2>Spending this month</h2><b>${money(spent)}</b></div><svg class="chart" viewBox="0 0 ${dim*10} 96" role="img" aria-label="Daily spending this month">${bars}<line x1="0" x2="${dim*10}" y1="82" y2="82" stroke="var(--line)"/><text x="1" y="94" font-size="9" fill="var(--mute)">1</text><text x="${dim*5}" y="94" font-size="9" fill="var(--mute)" text-anchor="middle">${Math.ceil(dim/2)}</text><text x="${dim*10-1}" y="94" font-size="9" fill="var(--mute)" text-anchor="end">${dim}</text></svg></div>
+  <div class="card"><div class="row"><h2>Budget used</h2><button class="lnk" onclick="go('budget')">Details</button></div><div class="row"><span class="mute">${money(spent)} of ${money(alloc)}</span><b>${alloc?Math.round(spent/alloc*100):0}%</b></div>${bar(spent,alloc,'var(--accent)')}
+  ${s.b.filter(b=>b.k!=='save').map(b=>`<div class="bucket"><div class="row"><span>${b.n}</span><span class="mute">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}</div>`).join('')}</div>
+  <div class="card"><div class="row"><h2>Savings goal</h2><button class="lnk" onclick="go('goals')">${g?'Open':'Set goal'}</button></div>${g?`<div class="row"><span class="mute">${money(gs)} of ${money(g.target)}</span><b>${Math.floor(pct(gs,g.target))}%</b></div>${bar(gs,g.target,'var(--save)')}`:'<div class="mute">No goal yet. Set one to track your progress.</div>'}</div>
+  <div class="card"><h2>Insights</h2>${ins.slice(0,3).map(i=>`<div class="ins ${i[0]}"><i></i><span>${i[1]}</span></div>`).join('')}</div>
+  <div class="card"><div class="row"><h2>Upcoming debt payments</h2><button class="lnk" onclick="go('debt')">Manage</button></div>${up.length?up.map(d=>{const late=d.due&&d.due<today();return `<div class="tx"><div class="d"><b>${esc(d.who)}</b><span class="${late?'bad':'mute'}">${d.type==='owe'?'You owe':'Owes you'}${d.due?', '+(late?'overdue ':'due ')+fdate(d.due):''}</span></div><b>${money(rem(d))}</b></div>`}).join(''):'<div class="mute">No outstanding debts.</div>'}</div>
+  <div class="card"><div class="row"><h2>Recent</h2><button class="lnk" onclick="go('act')">See all</button></div>${all().slice(0,5).map(row).join('')||'<div class="mute">Nothing yet. Use the buttons above to add your first entry.</div>'}</div>`}
+let M=null;
+function openAdd(kind){M={kind,cat:'auto'};const T={income:'Add income',expense:'Add expense',save:'Add savings'}[kind];
+  $('#ams').innerHTML=`<h2>${T}</h2><label for="ma">Amount (GH₵)</label><input id="ma" class="amt" inputmode="decimal" placeholder="0.00">
+  ${kind==='expense'?`<label>Category (Auto lets AI choose)</label><div class="chips" style="grid-template-columns:repeat(4,1fr)">${[['auto','Auto'],['needs','Needs'],['wants','Wants'],['give','Giving']].map(([c,n])=>`<button class="chip ${c==='auto'?'on':''}" data-c="${c}" style="${c==='auto'?'background:var(--accent)':''}" onclick="mc('${c}')">${n}</button>`).join('')}</div>`:''}
+  <label for="mn">Note (optional)</label><input id="mn" placeholder="${kind==='income'?'e.g. Allowance, side job':kind==='save'?'e.g. Towards my goal':'e.g. Trotro, lunch, airtime'}">
+  ${kind==='income'?'<label for="md">Date</label><input id="md" type="date" value="'+today()+'">':''}
+  <button class="primary" onclick="submitM()">Save</button><button class="ghost primary" onclick="closeM()">Cancel</button>`;
+  $('#am').hidden=false;setTimeout(()=>$('#ma').focus(),60)}
+function mc(c){M.cat=c;document.querySelectorAll('#ams .chip').forEach(x=>{const on=x.dataset.c===c;x.classList.toggle('on',on);x.style.background=on?'var(--accent)':''})}
+function closeM(){$('#am').hidden=true}
+async function submitM(){let a=parseFloat($('#ma').value);if(!(a>0)){toast('Enter an amount first');return}
+  a=Math.round(a*100)/100;const note=$('#mn').value.trim(),k=M.kind;
+  if(k==='income')S.income.push({id:uid(),date:$('#md').value||today(),amt:a,note});
+  else{let c=k==='save'?'save':M.cat;if(c==='auto'){toast('Choosing a category...');c=await aiCat(note,a)}S.tx.push({id:uid(),date:today(),amt:a,k:c,note})}
+  persist();closeM();render();toast(k==='income'?'Income added':'Saved')}
 function delTx(id){S.tx=S.tx.filter(x=>x.id!==id);persist();render()}
-function income(){
-  const list=[...S.income].sort((a,b)=>b.date.localeCompare(a.date));
-  return `<h1>Income</h1><div class="card"><h2>Add income</h2>
-  <label for="ia">Amount</label><input id="ia" class="amt" inputmode="decimal" placeholder="0.00" oninput="prev()">
-  <label for="in">What is it?</label><input id="in" placeholder="e.g. Allowance, side job, gift">
-  <label for="id">Date</label><input id="id" type="date" value="${today()}">
-  <div class="split" id="prev"></div>
-  <button class="primary" onclick="addInc()">Add income</button></div>
-  <div class="card"><h2>History</h2>${list.length?list.map(i=>`<div class="tx"><div class="d"><b>${esc(i.note||'Income')}</b><span class="mute">${fdate(i.date)}</span></div><b class="ok">+${money(i.amt)}</b><button class="x" aria-label="Delete" onclick="delInc('${i.id}')">×</button></div>`).join(''):'<div class="mute">No income added yet.</div>'}</div>`}
-function prev(){const a=parseFloat($('#ia').value)||0;$('#prev').innerHTML=B.map(b=>`<div><span class="mute">${b.n} ${b.p*100}%</span><b style="color:${b.c}">${money(a*b.p)}</b></div>`).join('')}
-function addInc(){const a=parseFloat($('#ia').value);if(!(a>0)){toast('Enter an amount first');return}
-  S.income.push({id:uid(),date:$('#id').value||today(),amt:a,note:$('#in').value.trim()});persist();render();toast('Income added and split')}
 function delInc(id){S.income=S.income.filter(x=>x.id!==id);persist();render()}
+let aQ='',aF='all';
+function aRows(){const q=aQ.toLowerCase(),f=aF;const l=all().filter(x=>(f==='all'||(f==='inc'?x.t==='inc':f==='save'?x.t==='save':x.t!=='inc'&&x.t!=='save'))&&(!q||(x.note||'').toLowerCase().includes(q)||(x.t==='inc'?'income':B.find(b=>b.k===x.t).n.toLowerCase()).includes(q)));return l.length?l.map(row).join(''):'<div class="mute">Nothing found.</div>'}
+function aList(){$('#al').innerHTML=aRows()}
+function activity(){return `<h1>Activity</h1><input id="aq" placeholder="Search notes or categories" aria-label="Search" value="${esc(aQ)}" oninput="aQ=this.value;aList()">
+  <div class="chips" style="grid-template-columns:repeat(4,1fr);margin:10px 0">${[['all','All'],['inc','Income'],['exp','Expenses'],['save','Savings']].map(([k,n])=>`<button class="chip ${aF===k?'on':''}" style="${aF===k?'background:var(--accent)':''}" onclick="aF='${k}';render()">${n}</button>`).join('')}</div><div class="card" id="al">${aRows()}</div>`}
+function budget(){const m=rm||mkey(),s=sm(m);
+  return `<h1>Budget</h1><div class="mnav"><button class="ghost" aria-label="Previous month" onclick="mv(-1)">‹</button><b>${mname(m)}</b><button class="ghost" aria-label="Next month" onclick="mv(1)">›</button></div>
+  <div class="card"><div class="row"><span class="mute">Income</span><b>${money(s.inc)}</b></div>${s.b.map(b=>{const p=b.alloc?b.used/b.alloc*100:0,sv=b.k==='save';const n=sv?(p>=100?'Target reached':''):p>=100?`Over by ${money(b.used-b.alloc)}`:p>=80?'Nearing the limit':'';
+  return `<div class="bucket"><div class="row"><b>${b.n} ${b.p*100}%</b><span class="${!sv&&p>=100?'bad':'mute'}">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}${n?`<div class="${!sv&&p>=100?'bad':'mute'}" style="font-size:13px;margin-top:4px">${n}</div>`:''}</div>`}).join('')}</div>
+  <button class="ghost primary" onclick="go('report')">Open full monthly report</button>`}
+function profile(){const t=S.theme||'system';
+  return `<h1>Profile</h1><div class="card"><h2>Appearance</h2><div class="chips" style="grid-template-columns:repeat(3,1fr)">${[['system','System'],['light','Light'],['dark','Dark']].map(([k,n])=>`<button class="chip ${t===k?'on':''}" style="${t===k?'background:var(--accent)':''}" onclick="S.theme='${k}';persist();render()">${n}</button>`).join('')}</div></div>
+  <div class="card"><h2>Shortcuts</h2><button class="ghost link" onclick="go('debt')">Debts</button><button class="ghost link" onclick="go('report')">Monthly report</button><button class="ghost link" onclick="fbOpen()">Rate or send feedback</button></div>
+  <div class="card"><h2>Your data</h2><p class="mute" style="margin:0">Everything is stored on this device only.</p><button class="ghost link bad" onclick="wipe()">Delete all my data</button></div>`}
+function wipe(){if(confirm('Delete all your data on this device? This cannot be undone.')){S={income:[],tx:[],goal:null,debts:[],theme:S.theme};persist();render();toast('All data deleted')}}
 function goal(){
   const g=S.goal;
   if(!g||editGoal)return `<h1>Savings goal</h1><div class="card"><h2>${g?'Change goal':'Set a goal'}</h2>
@@ -195,7 +252,7 @@ async function analyze(){
   const m=rm||today().slice(0,7),s=sm(m),out=$('#ai');
   const ex=S.tx.filter(x=>x.date.startsWith(m)).slice(-60).map(x=>x.k+': '+(x.note||'no note')+' GHS '+x.amt).join('\n');
   const dt=S.debts.map(d=>(d.type==='owe'?'I owe ':'Owed to me by ')+d.who+': '+rem(d)+' left'+(d.due?', due '+d.due:'')).join('\n');
-  const p='You are a friendly money coach for a Ghanaian National Service person on a 50% needs, 30% wants, 15% savings, 5% giving budget. Month: '+mname(m)+'. Income: GHS '+s.inc+'.\nBuckets (planned / used):\n'+s.b.map(b=>b.n+': '+b.alloc.toFixed(2)+' / '+b.used.toFixed(2)).join('\n')+'\nExpenses:\n'+(ex||'none')+'\nDebts:\n'+(dt||'none')+'\nGive a short review in plain text, no markdown, under 130 words: what went well, the biggest leak (and any entry that looks filed in the wrong category), one concrete step for next week, and a note on debts if any. Use cedis.';
+  const p='You are a friendly money coach for a person living in Ghana on a 50% needs, 30% wants, 15% savings, 5% giving budget. Month: '+mname(m)+'. Income: GHS '+s.inc+'.\nBuckets (planned / used):\n'+s.b.map(b=>b.n+': '+b.alloc.toFixed(2)+' / '+b.used.toFixed(2)).join('\n')+'\nExpenses:\n'+(ex||'none')+'\nDebts:\n'+(dt||'none')+'\nGive a short review in plain text, no markdown, under 130 words: what went well, the biggest leak (and any entry that looks filed in the wrong category), one concrete step for next week, and a note on debts if any. Use cedis.';
   out.textContent='Thinking...';
   try{await SAMPLE(p,{modelTier:'default',cache:false,onText:({text})=>{out.textContent=text}})}catch(e){out.textContent=e&&e.code==='not_granted'?'Allow AI access to use this feature.':'Couldn’t analyze right now. Try again in a moment.'}}
 function report(){
@@ -214,12 +271,15 @@ function report(){
   <div class="card"><div class="row"><span class="mute">Debt payments this month</span><b>${money(S.debts.filter(d=>d.type==='owe').reduce((t,d)=>t+sum(d.pays.filter(p=>p.date.startsWith(m))),0))}</b></div></div>
   <div class="card"><h2>AI review</h2><div class="mute">Spots overspending and anything filed in the wrong category.</div><button class="primary" onclick="analyze()">Analyze this month</button><div id="ai" class="ai"></div></div>`}
 function mv(d){const m=rm||today().slice(0,7);const t=dd(m+'-01');t.setMonth(t.getMonth()+d);rm=iso(t).slice(0,7);render()}
-const TABS=[['home','Today',home],['income','Income',income],['goal','Goal',goal],['debt','Debts',debt],['report','Report',report]];
+const TABS=[['home','Home',home,IC.home],['act','Activity',activity,IC.act],['budget','Budget',budget,IC.budget],['goals','Goals',()=>goal()+'<button class="ghost primary" onclick="go(\'debt\')">Debts</button>',IC.goals],['me','Profile',profile,IC.me]];
+const SUB={report:['budget',report],debt:['goals',debt]};
+function go(t){tab=t;render();scrollTo(0,0)}
 function render(){
-  $('#app').innerHTML=TABS.find(t=>t[0]===tab)[2]();
-  $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===tab?'on':''}" onclick="tab='${t[0]}';render();scrollTo(0,0)">${t[1]}</button>`).join('');
-  if(tab==='income')prev();
-}
+  const th=S.theme||'system';if(th==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',th);
+  const sub=SUB[tab],par=sub?sub[0]:tab,f=sub?sub[1]:TABS.find(t=>t[0]===tab)[2];
+  $('#app').innerHTML=(sub?`<button class="ghost back" onclick="go('${par}')">‹ Back</button>`:'')+f();
+  $('#nav').innerHTML=TABS.map(t=>`<button class="${t[0]===par?'on':''}" onclick="go('${t[0]}')">${svg(t[3])}<span>${t[1]}</span></button>`).join('')}
+
 let fbR=0;
 const fbPost=(r,m)=>fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({'form-name':'feedback',rating:r||'',message:m}).toString()});
 function fbStars(){$('#stars').innerHTML=[1,2,3,4,5].map(n=>`<button aria-label="${n} star${n>1?'s':''}" class="${n<=fbR?'on':''}" onclick="fbR=${n};fbStars()">★</button>`).join('')}
