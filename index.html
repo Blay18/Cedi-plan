@@ -105,7 +105,7 @@ nav svg,.ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-widt
 const KEY='cedi-plan-v1';
 const B=[{k:'needs',n:'Needs',p:.5,c:'var(--needs)'},{k:'wants',n:'Wants',p:.3,c:'var(--wants)'},{k:'save',n:'Savings',p:.15,c:'var(--save)'},{k:'give',n:'Giving',p:.05,c:'var(--give)'}];
 const CH=[{k:'auto',n:'Auto',c:'var(--accent)'},...B];
-let S={income:[],tx:[],goal:null,debts:[]},tab='home',cat='auto',dtype='owe',rm=null,editGoal=false,SAMPLE=null;
+let S={income:[],tx:[],goal:null,debts:[],subs:[]},tab='home',cat='auto',dtype='owe',rm=null,editGoal=false,SAMPLE=null;
 const API=async(p,q)=>{const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:p,quick:!!q})});if(!r.ok)throw{code:r.status===429?'rate_limited':'error'};return(await r.json()).text};
 SAMPLE=async(p,o={})=>{const t=await API(p,0);if(o.onText)o.onText({text:t});return{text:t}};
 SAMPLE.json=async p=>JSON.parse((await API(p,1)).replace(/```json|```/g,'').trim());
@@ -170,7 +170,26 @@ function home(){
   <div class="card"><div class="row"><h2>Savings goal</h2><button class="lnk" onclick="go('goals')">${g?'Open':'Set goal'}</button></div>${g?`<div class="row"><span class="mute">${money(gs)} of ${money(g.target)}</span><b>${Math.floor(pct(gs,g.target))}%</b></div>${bar(gs,g.target,'var(--save)')}`:'<div class="mute">No goal yet. Set one to track your progress.</div>'}</div>
   <div class="card"><h2>Insights</h2>${ins.slice(0,3).map(i=>`<div class="ins ${i[0]}"><i></i><span>${i[1]}</span></div>`).join('')}</div>
   <div class="card"><div class="row"><h2>Upcoming debt payments</h2><button class="lnk" onclick="go('debt')">Manage</button></div>${up.length?up.map(d=>{const late=d.due&&d.due<today();return `<div class="tx"><div class="d"><b>${esc(d.who)}</b><span class="${late?'bad':'mute'}">${d.type==='owe'?'You owe':'Owes you'}${d.due?', '+(late?'overdue ':'due ')+fdate(d.due):''}</span></div><b>${money(rem(d))}</b></div>`}).join(''):'<div class="mute">No outstanding debts.</div>'}</div>
-  <div class="card"><div class="row"><h2>Recent</h2><button class="lnk" onclick="go('act')">See all</button></div>${all().slice(0,5).map(row).join('')||'<div class="mute">Nothing yet. Use the buttons above to add your first entry.</div>'}</div>`}
+  ${subsDue()}<div class="card"><div class="row"><h2>Recent</h2><button class="lnk" onclick="go('act')">See all</button></div>${all().slice(0,5).map(row).join('')||'<div class="mute">Nothing yet. Use the buttons above to add your first entry.</div>'}</div>`}
+let sc='month',sk='Streaming';
+const SK=['Streaming','Data bundle','Social apps','Other'],SC=[['week','Weekly'],['month','Monthly'],['year','Yearly']],CT={week:'a week',month:'a month',year:'a year'};
+const perMonth=u=>u.cycle==='week'?u.amt*52/12:u.cycle==='year'?u.amt/12:u.amt;
+function adv(s,c){const d=dd(s);if(c==='week')d.setDate(d.getDate()+7);else{const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+(c==='year'?12:1));d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()))}return iso(d)}
+function subLabel(u){const n=dayDiff(today(),u.next);return n<0?`Overdue by ${-n} day${n<-1?'s':''}`:n===0?'Due today':`Due in ${n} day${n>1?'s':''}`}
+function subsDue(){const l=S.subs.filter(u=>dayDiff(today(),u.next)<=7);return l.length?`<div class="card"><div class="row"><h2>Subscriptions due</h2><button class="lnk" onclick="go('subs')">Manage</button></div>${l.map(u=>`<div class="tx"><div class="d"><b>${esc(u.name)}</b><span class="${dayDiff(today(),u.next)<0?'bad':'mute'}">${subLabel(u)}</span></div><b>${money(u.amt)}</b></div>`).join('')}</div>`:''}
+function pickS(g,v){if(g==='c')sc=v;else sk=v;document.querySelectorAll(`#app .chip[data-g="${g}"]`).forEach(x=>{const on=x.dataset.v===v;x.classList.toggle('on',on);x.style.background=on?'var(--accent)':''})}
+function subs(){const l=[...S.subs].sort((a,b)=>a.next.localeCompare(b.next)),tot=l.reduce((t,u)=>t+perMonth(u),0);
+  const ch=(g,cur,arr,cols)=>`<div class="chips" style="grid-template-columns:repeat(${cols},1fr)">${arr.map(([v,n])=>`<button class="chip ${v===cur?'on':''}" data-g="${g}" data-v="${v}" style="${v===cur?'background:var(--accent)':''}" onclick="pickS('${g}','${v}')">${n}</button>`).join('')}</div>`;
+  return `<h1>Subscriptions</h1><div class="card"><div class="mute">Monthly cost</div><div class="big">${money(tot)}</div><div class="mute">${l.length} active, about ${money(tot*12)} a year</div></div>
+  <div class="card"><h2>Add a subscription</h2><label for="sn">Name</label><input id="sn" placeholder="e.g. Netflix, MTN data, Spotify">
+  <label for="sa">Amount (GH₵)</label><input id="sa" class="amt" inputmode="decimal" placeholder="0.00">
+  <label>Billed</label>${ch('c',sc,SC,3)}<label>Type</label>${ch('k',sk,SK.map(k=>[k,k]),2)}
+  <label for="sd">Next payment date</label><input id="sd" type="date" value="${today()}"><button class="primary" onclick="addSub()">Add subscription</button></div>
+  <div class="card"><h2>Your subscriptions</h2>${l.length?l.map(u=>`<div class="tx"><div class="d"><b>${esc(u.name)}</b><span class="mute">${u.kind}, ${money(u.amt)} ${CT[u.cycle]}</span><span class="${dayDiff(today(),u.next)<0?'bad':'mute'}" style="display:block;font-size:13px">${subLabel(u)}, ${fdate(u.next)}</span></div><button class="ghost" style="min-height:40px;flex:none" onclick="paySub('${u.id}')">Mark paid</button><button class="x" aria-label="Delete subscription" onclick="delSub('${u.id}')">×</button></div>`).join(''):'<div class="mute">No subscriptions yet.</div>'}</div>`}
+function addSub(){const n=$('#sn').value.trim();let a=parseFloat($('#sa').value);if(!n||!(a>0)){toast('Enter a name and an amount');return}
+  S.subs.push({id:uid(),name:n,amt:Math.round(a*100)/100,cycle:sc,kind:sk,next:$('#sd').value||today()});persist();render();toast('Subscription added')}
+function paySub(id){const u=S.subs.find(x=>x.id===id);if(!u)return;S.tx.push({id:uid(),date:today(),amt:u.amt,k:u.kind==='Data bundle'?'needs':'wants',note:'Subscription: '+u.name});u.next=adv(u.next,u.cycle);persist();render();toast('Payment recorded as an expense')}
+function delSub(id){S.subs=S.subs.filter(x=>x.id!==id);persist();render()}
 let M=null;
 function openAdd(kind){M={kind,cat:'auto'};const T={income:'Add income',expense:'Add expense',save:'Add savings'}[kind];
   $('#ams').innerHTML=`<h2>${T}</h2><label for="ma">Amount (GH₵)</label><input id="ma" class="amt" inputmode="decimal" placeholder="0.00">
@@ -197,12 +216,12 @@ function budget(){const m=rm||mkey(),s=sm(m);
   return `<h1>Budget</h1><div class="mnav"><button class="ghost" aria-label="Previous month" onclick="mv(-1)">‹</button><b>${mname(m)}</b><button class="ghost" aria-label="Next month" onclick="mv(1)">›</button></div>
   <div class="card"><div class="row"><span class="mute">Income</span><b>${money(s.inc)}</b></div>${s.b.map(b=>{const p=b.alloc?b.used/b.alloc*100:0,sv=b.k==='save';const n=sv?(p>=100?'Target reached':''):p>=100?`Over by ${money(b.used-b.alloc)}`:p>=80?'Nearing the limit':'';
   return `<div class="bucket"><div class="row"><b>${b.n} ${b.p*100}%</b><span class="${!sv&&p>=100?'bad':'mute'}">${money(b.used)} of ${money(b.alloc)}</span></div>${bar(b.used,b.alloc,b.c)}${n?`<div class="${!sv&&p>=100?'bad':'mute'}" style="font-size:13px;margin-top:4px">${n}</div>`:''}</div>`}).join('')}</div>
-  <button class="ghost primary" onclick="go('report')">Open full monthly report</button>`}
+  <button class="ghost primary" onclick="go('subs')">Subscriptions</button><button class="ghost primary" onclick="go('report')">Open full monthly report</button>`}
 function profile(){const t=S.theme||'system';
   return `<h1>Profile</h1><div class="card"><h2>Appearance</h2><div class="chips" style="grid-template-columns:repeat(3,1fr)">${[['system','System'],['light','Light'],['dark','Dark']].map(([k,n])=>`<button class="chip ${t===k?'on':''}" style="${t===k?'background:var(--accent)':''}" onclick="S.theme='${k}';persist();render()">${n}</button>`).join('')}</div></div>
-  <div class="card"><h2>Shortcuts</h2><button class="ghost link" onclick="go('debt')">Debts</button><button class="ghost link" onclick="go('report')">Monthly report</button><button class="ghost link" onclick="fbOpen()">Rate or send feedback</button></div>
+  <div class="card"><h2>Shortcuts</h2><button class="ghost link" onclick="go('debt')">Debts</button><button class="ghost link" onclick="go('subs')">Subscriptions</button><button class="ghost link" onclick="go('report')">Monthly report</button><button class="ghost link" onclick="fbOpen()">Rate or send feedback</button></div>
   <div class="card"><h2>Your data</h2><p class="mute" style="margin:0">Everything is stored on this device only.</p><button class="ghost link bad" onclick="wipe()">Delete all my data</button></div>`}
-function wipe(){if(confirm('Delete all your data on this device? This cannot be undone.')){S={income:[],tx:[],goal:null,debts:[],theme:S.theme};persist();render();toast('All data deleted')}}
+function wipe(){if(confirm('Delete all your data on this device? This cannot be undone.')){S={income:[],tx:[],goal:null,debts:[],subs:[],theme:S.theme};persist();render();toast('All data deleted')}}
 function goal(){
   const g=S.goal;
   if(!g||editGoal)return `<h1>Savings goal</h1><div class="card"><h2>${g?'Change goal':'Set a goal'}</h2>
@@ -272,7 +291,7 @@ function report(){
   <div class="card"><h2>AI review</h2><div class="mute">Spots overspending and anything filed in the wrong category.</div><button class="primary" onclick="analyze()">Analyze this month</button><div id="ai" class="ai"></div></div>`}
 function mv(d){const m=rm||today().slice(0,7);const t=dd(m+'-01');t.setMonth(t.getMonth()+d);rm=iso(t).slice(0,7);render()}
 const TABS=[['home','Home',home,IC.home],['act','Activity',activity,IC.act],['budget','Budget',budget,IC.budget],['goals','Goals',()=>goal()+'<button class="ghost primary" onclick="go(\'debt\')">Debts</button>',IC.goals],['me','Profile',profile,IC.me]];
-const SUB={report:['budget',report],debt:['goals',debt]};
+const SUB={report:['budget',report],debt:['goals',debt],subs:['budget',subs]};
 function go(t){tab=t;render();scrollTo(0,0)}
 function render(){
   const th=S.theme||'system';if(th==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',th);
